@@ -113,42 +113,19 @@ public class UserService {
 
     private List<String> getItemNames(MatchParticipant participant, Map<Integer, Item> itemData) {
         List<String> itemNames = new ArrayList<>();
+        List<Integer> itemIds = Arrays.asList(participant.getItem0(), participant.getItem1(), participant.getItem2(), participant.getItem3(),
+                participant.getItem4(), participant.getItem5(), participant.getItem6());
 
-        for (int i = 0; i <= 6; i++) {
-            int itemId = 0;
-            switch (i) {
-                case 0:
-                    itemId = participant.getItem0();
-                    break;
-                case 1:
-                    itemId = participant.getItem1();
-                    break;
-                case 2:
-                    itemId = participant.getItem2();
-                    break;
-                case 3:
-                    itemId = participant.getItem3();
-                    break;
-                case 4:
-                    itemId = participant.getItem4();
-                    break;
-                case 5:
-                    itemId = participant.getItem5();
-                    break;
-                case 6:
-                    itemId = participant.getItem6();
-                    break;
-                default:
-                    break;
-            }
-
+        for (int itemId : itemIds) {
             if (itemId != 0) {
                 Item item = itemData.get(itemId);
-                itemNames.add(item.getName());
+                if(item != null) {
+                    itemNames.add(item.getName());
+                }
             }
         }
-
         return itemNames;
     }
+
 }
 
