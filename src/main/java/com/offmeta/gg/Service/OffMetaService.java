@@ -24,6 +24,7 @@ public class OffMetaService {
                 .filter(participant -> lane.equalsIgnoreCase(participant.getRole()))
                 .collect(Collectors.toList());
 
+        //need to divide by 2 as there are 2 of the same laners in a game
         int totalMatches = laneParticipants.size() / 2;
 
         Map<String, ChampionStats> championStatsMap = new HashMap<>();

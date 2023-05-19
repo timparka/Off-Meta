@@ -24,7 +24,4 @@ public class ParticipantEntity {
     private String summonerSpell2;
     private String role;
 
-    public void addItem(String item) {
-        items.add(item);
-    }
 }

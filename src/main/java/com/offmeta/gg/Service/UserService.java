@@ -21,6 +21,7 @@ import no.stelar7.api.r4j.pojo.lol.staticdata.summonerspell.StaticSummonerSpell;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.mongodb.core.aggregation.VariableOperators;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -43,7 +44,16 @@ public class UserService {
     }
 
     public void fetchData() {
-        // Fetching data for LeagueEntries and summonerIds
+        List<String> summonerIds = getTopPlayerIds();
+        Set<String> uniqueMatchIds = getUniqueMatchIds(summonerIds);
+        Map<Integer, StaticChampion> champData = api.getDDragonAPI().getChampions();
+        Map<Integer, StaticSummonerSpell> spellData = api.getDDragonAPI().getSummonerSpells();
+        Map<Integer, Item> itemData = api.getDDragonAPI().getItems();
+
+        saveParticipants(uniqueMatchIds, champData, spellData, itemData);
+    }
+
+    private List<String> getTopPlayerIds() {
         List<LeagueEntry> challengerEntries = LeagueAPI.getInstance().getLeagueByTierDivision(region, GameQueueType.RANKED_SOLO_5X5, TierDivisionType.CHALLENGER_I, 1);
         List<LeagueEntry> grandmasterEntries = LeagueAPI.getInstance().getLeagueByTierDivision(region, GameQueueType.RANKED_SOLO_5X5, TierDivisionType.GRANDMASTER_I, 1);
         List<LeagueEntry> masterEntries = LeagueAPI.getInstance().getLeagueByTierDivision(region, GameQueueType.RANKED_SOLO_5X5, TierDivisionType.MASTER_I, 1);
@@ -52,7 +62,10 @@ public class UserService {
         summonerIds.addAll(challengerEntries.stream().map(LeagueEntry::getSummonerId).collect(Collectors.toList()));
         summonerIds.addAll(grandmasterEntries.stream().map(LeagueEntry::getSummonerId).collect(Collectors.toList()));
         summonerIds.addAll(masterEntries.stream().map(LeagueEntry::getSummonerId).collect(Collectors.toList()));
+        return summonerIds;
+    }
 
+    private Set<String> getUniqueMatchIds(List<String> summonerIds) {
         Set<String> uniqueMatchIds = new HashSet<>();
 
         // Getting match IDs
@@ -64,11 +77,11 @@ public class UserService {
             // Add match IDs to the HashSet
             uniqueMatchIds.addAll(matches);
         }
+        return uniqueMatchIds;
+    }
 
-        Map<Integer, StaticChampion> champData = api.getDDragonAPI().getChampions();
-        Map<Integer, StaticSummonerSpell> spellData = api.getDDragonAPI().getSummonerSpells();
-        Map<Integer, Item> itemData = api.getDDragonAPI().getItems();
-
+    private void saveParticipants(Set<String> uniqueMatchIds, Map<Integer, StaticChampion> champData, Map<Integer,
+            StaticSummonerSpell> spellData, Map<Integer, Item> itemData) {
         List<ParticipantEntity> participantEntities = new ArrayList<>();
 
         for (String matchId : uniqueMatchIds) {
