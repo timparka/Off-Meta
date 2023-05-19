@@ -21,7 +21,6 @@ import no.stelar7.api.r4j.pojo.lol.staticdata.summonerspell.StaticSummonerSpell;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.mongodb.core.aggregation.VariableOperators;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -35,6 +34,7 @@ public class UserService {
 
     private LeagueShard region = LeagueShard.NA1;
     private RegionShard regionShard = RegionShard.AMERICAS;
+    private static final int SMITE_SPELL_ID = 11;
 
     @Autowired
     private R4J api;
@@ -92,6 +92,13 @@ public class UserService {
                 StaticChampion participantChampion = champData.get(participant.getChampionId());
                 StaticSummonerSpell summonerSpell1 = spellData.get(participant.getSummoner1Id());
                 StaticSummonerSpell summonerSpell2 = spellData.get(participant.getSummoner2Id());
+
+                if (summonerSpell1 == null) {
+                    summonerSpell1 = spellData.get(SMITE_SPELL_ID);
+                }
+                if (summonerSpell2 == null) {
+                    summonerSpell2 = spellData.get(SMITE_SPELL_ID);
+                }
 
                 ParticipantEntity participantEntity = new ParticipantEntity(
                         null,
