@@ -72,7 +72,7 @@ public class UserService {
         for (String summonerId : summonerIds) {
             Summoner summoner = new SummonerBuilder().withPlatform(region).withSummonerId(summonerId).get();
             MatchV5API matchV5API = MatchV5API.getInstance();
-            List<String> matches = matchV5API.getMatchList(regionShard, summoner.getPUUID(), null, null, 0, 1, null, null);
+            List<String> matches = matchV5API.getMatchList(regionShard, summoner.getPUUID(), null, null, 0, 10, null, null);
 
             // Add match IDs to the HashSet
             uniqueMatchIds.addAll(matches);
@@ -114,7 +114,6 @@ public class UserService {
                 participantEntities.add(participantEntity);
             }
         }
-
         participantRepository.saveAll(participantEntities);
     }
 
@@ -132,6 +131,10 @@ public class UserService {
             }
         }
         return itemNames;
+    }
+
+    public void newPatchData() {
+        participantRepository.deleteAll();
     }
 
 }

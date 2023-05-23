@@ -35,4 +35,10 @@ public class UserController {
         return "Successfully fetched data!";
     }
 
+    @DeleteMapping("/newpatch")
+    @ResponseStatus(HttpStatus.OK)
+    public String newPatchData() {
+        userService.newPatchData();
+        return "Successfully cleared data!";
+    }
 }
