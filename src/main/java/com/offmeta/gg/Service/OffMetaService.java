@@ -25,10 +25,24 @@ public class OffMetaService {
         calculateRatesForAllChampions(championStatsMap, totalMatches);
         List<ChampionStats> championStatsList = sortChampionStatsList(championStatsMap);
 
-        ChampionStats bestChampion = championStatsList.get(0);
+        // Filter champions that have been played in at least 10 matches
+        List<ChampionStats> filteredChampionStatsList = championStatsList.stream()
+                .filter(championStats -> championStats.getGamesPlayed() >= 10)
+                .collect(Collectors.toList());
+
+        ChampionStats bestChampion;
+
+        if (filteredChampionStatsList.isEmpty()) {
+            // Handle the case where no champion has been played in at least 10 matches
+            // Return the champion with the highest win rate and lowest pick rate regardless of the number of matches played
+            bestChampion = championStatsList.get(0);
+        } else {
+            bestChampion = filteredChampionStatsList.get(0);
+        }
 
         return buildOffMetaDTO(bestChampion, lane);
     }
+
 
     private List<ParticipantEntity> filterParticipantsByLane(List<ParticipantEntity> participants, String lane) {
         return participants.stream()
@@ -37,7 +51,7 @@ public class OffMetaService {
     }
 
     private int calculateTotalMatches(List<ParticipantEntity> laneParticipants) {
-        return laneParticipants.size() / 2;
+        return laneParticipants.size() / 10;
     }
 
     private Map<String, ChampionStats> generateChampionStats(List<ParticipantEntity> laneParticipants) {
@@ -75,6 +89,11 @@ public class OffMetaService {
         offMetaPick.setSummonerSpell1(bestChampion.getMostCommonSummonerSpell1());
         offMetaPick.setSummonerSpell2(bestChampion.getMostCommonSummonerSpell2());
         offMetaPick.setRole(lane);
+        offMetaPick.setWinRate(bestChampion.getWinRate());
+        offMetaPick.setPickRate(bestChampion.getPickRate());
+        offMetaPick.setGamesPlayed(bestChampion.getGamesPlayed());
         return offMetaPick;
     }
+
+
 }
