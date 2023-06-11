@@ -27,7 +27,7 @@ public class OffMetaService {
 
         // Filter champions that have been played in at least 10 matches
         List<ChampionStats> filteredChampionStatsList = championStatsList.stream()
-                .filter(championStats -> championStats.getGamesPlayed() >= 10)
+                .filter(championStats -> championStats.getGamesPlayed() >= 300)
                 .collect(Collectors.toList());
 
         ChampionStats bestChampion;
@@ -38,6 +38,14 @@ public class OffMetaService {
             bestChampion = championStatsList.get(0);
         } else {
             bestChampion = filteredChampionStatsList.get(0);
+        }
+        if (bestChampion.getWinRate() <= 0.50) {
+            for (ChampionStats championStats : filteredChampionStatsList) {
+                if (championStats.getWinRate() > 0.50) {
+                    bestChampion = championStats;
+                    break;
+                }
+            }
         }
 
         return buildOffMetaDTO(bestChampion, lane);
