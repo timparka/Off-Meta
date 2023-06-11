@@ -14,9 +14,9 @@ public class OffMetaController {
     @Autowired
     private OffMetaService offMetaService;
 
-    @GetMapping
+    @GetMapping("/{lane}")
     @ResponseStatus(HttpStatus.OK)
-    public OffMetaDTO offMetaPick(@RequestBody String lane) {
+    public OffMetaDTO offMetaPick(@PathVariable String lane) {
         return offMetaService.getOffMetaPick(lane);
     }
 }

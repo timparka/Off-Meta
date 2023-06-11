@@ -14,8 +14,6 @@ public class OffMetaDTO {
     private String id;
     @JsonProperty("championName")
     private String championName;
-    @JsonProperty("win")
-    private boolean win;
     @JsonProperty("items")
     private List<String> items;
     @JsonProperty("summonerSpell1")
@@ -24,4 +22,10 @@ public class OffMetaDTO {
     private String summonerSpell2;
     @JsonProperty("role")
     private String role;
+    @JsonProperty("winRate")
+    private double winRate;
+    @JsonProperty("pickRate")
+    private double pickRate;
+    @JsonProperty("gamesPlayed")
+    private int gamesPlayed;
 }

@@ -114,7 +114,6 @@ public class UserService {
                 participantEntities.add(participantEntity);
             }
         }
-
         participantRepository.saveAll(participantEntities);
     }
 
@@ -132,6 +131,10 @@ public class UserService {
             }
         }
         return itemNames;
+    }
+
+    public void newPatchData() {
+        participantRepository.deleteAll();
     }
 
 }
