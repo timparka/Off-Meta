@@ -34,3 +34,4 @@ build/
 
 ### files ###
 application.properties
+l4j8cache/*
