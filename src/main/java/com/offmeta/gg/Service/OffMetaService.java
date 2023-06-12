@@ -65,7 +65,8 @@ public class OffMetaService {
     private Map<String, ChampionStats> generateChampionStats(List<ParticipantEntity> laneParticipants) {
         Map<String, ChampionStats> championStatsMap = new HashMap<>();
         for (ParticipantEntity participant : laneParticipants) {
-            championStatsMap.putIfAbsent(participant.getChampionName(), new ChampionStats(participant.getChampionName()));
+            championStatsMap.putIfAbsent(participant.getChampionName(),
+                    new ChampionStats(participant.getChampionName(), participant.getChampionImageUrl()));
             ChampionStats stats = championStatsMap.get(participant.getChampionName());
             stats.incrementGamesPlayed();
             if (participant.isWin()) {
@@ -100,6 +101,7 @@ public class OffMetaService {
         offMetaPick.setWinRate(bestChampion.getWinRate());
         offMetaPick.setPickRate(bestChampion.getPickRate());
         offMetaPick.setGamesPlayed(bestChampion.getGamesPlayed());
+        offMetaPick.setChampionImageUrl(bestChampion.getChampionImageUrl());
         return offMetaPick;
     }
 

@@ -13,9 +13,11 @@ public class ChampionStats {
     private double pickRate;
     private Map<List<String>, Integer> itemBuildFrequency;
     private Map<String, Integer> summonerSpellFrequency;
+    private String championImageUrl;
 
-    public ChampionStats(String championName) {
+    public ChampionStats(String championName, String championImageUrl) {
         this.championName = championName;
+        this.championImageUrl = championImageUrl;
         this.gamesPlayed = 0;
         this.wins = 0;
         this.itemBuildFrequency = new HashMap<>();

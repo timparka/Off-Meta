@@ -46,6 +46,8 @@ public class UserService {
     public void fetchData() {
         List<String> summonerIds = getTopPlayerIds();
         Set<String> uniqueMatchIds = getUniqueMatchIds(summonerIds);
+
+        //these maps just hold relevant information of the game as the names suggest
         Map<Integer, StaticChampion> champData = api.getDDragonAPI().getChampions();
         Map<Integer, StaticSummonerSpell> spellData = api.getDDragonAPI().getSummonerSpells();
         Map<Integer, Item> itemData = api.getDDragonAPI().getItems();
@@ -59,6 +61,7 @@ public class UserService {
         List<LeagueEntry> masterEntries = LeagueAPI.getInstance().getLeagueByTierDivision(region, GameQueueType.RANKED_SOLO_5X5, TierDivisionType.MASTER_I, 1);
 
         List<String> summonerIds = new ArrayList<>();
+        //gets players summonerId and puts into summonerIds list
         summonerIds.addAll(challengerEntries.stream().map(LeagueEntry::getSummonerId).collect(Collectors.toList()));
         summonerIds.addAll(grandmasterEntries.stream().map(LeagueEntry::getSummonerId).collect(Collectors.toList()));
         summonerIds.addAll(masterEntries.stream().map(LeagueEntry::getSummonerId).collect(Collectors.toList()));
@@ -72,7 +75,7 @@ public class UserService {
         for (String summonerId : summonerIds) {
             Summoner summoner = new SummonerBuilder().withPlatform(region).withSummonerId(summonerId).get();
             MatchV5API matchV5API = MatchV5API.getInstance();
-            List<String> matches = matchV5API.getMatchList(regionShard, summoner.getPUUID(), null, null, 0, 10, null, null);
+            List<String> matches = matchV5API.getMatchList(regionShard, summoner.getPUUID(), GameQueueType.RANKED_SOLO_5X5, null, 0, 10, null, null);
 
             // Add match IDs to the HashSet
             uniqueMatchIds.addAll(matches);
@@ -83,6 +86,7 @@ public class UserService {
     private void saveParticipants(Set<String> uniqueMatchIds, Map<Integer, StaticChampion> champData, Map<Integer,
             StaticSummonerSpell> spellData, Map<Integer, Item> itemData) {
         List<ParticipantEntity> participantEntities = new ArrayList<>();
+        String currentVersion = api.getDDragonAPI().getVersions().get(0);
 
         for (String matchId : uniqueMatchIds) {
             LOLMatch match = LOLMatch.get(regionShard, matchId);
@@ -90,6 +94,7 @@ public class UserService {
 
             for (MatchParticipant participant : participants) {
                 StaticChampion participantChampion = champData.get(participant.getChampionId());
+                String championImageUrl = String.format("http://ddragon.leagueoflegends.com/cdn/%s/img/champion/%s", currentVersion, participantChampion.getImage().getFull());
                 StaticSummonerSpell summonerSpell1 = spellData.get(participant.getSummoner1Id());
                 StaticSummonerSpell summonerSpell2 = spellData.get(participant.getSummoner2Id());
 
@@ -108,7 +113,8 @@ public class UserService {
                         getItemNames(participant, itemData),
                         summonerSpell1.getName(),
                         summonerSpell2.getName(),
-                        String.valueOf(participant.getChampionSelectLane())
+                        String.valueOf(participant.getChampionSelectLane()),
+                        championImageUrl
                 );
 
                 participantEntities.add(participantEntity);

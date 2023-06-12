@@ -28,4 +28,6 @@ public class OffMetaDTO {
     private double pickRate;
     @JsonProperty("gamesPlayed")
     private int gamesPlayed;
+    @JsonProperty("championImageUrl")
+    private String championImageUrl;
 }
