@@ -1,6 +1,6 @@
 package com.offmeta.gg.Controller;
 
-import com.offmeta.gg.Service.UserRegistrationService;
+//import com.offmeta.gg.Service.UserRegistrationService;
 import com.offmeta.gg.Service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,8 +14,8 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class UserController {
 
-    @Autowired
-    private UserRegistrationService userRegistrationService;
+//    @Autowired
+//    private UserRegistrationService userRegistrationService;
     @Autowired
     private UserService userService;
 
@@ -34,6 +34,14 @@ public class UserController {
         userService.fetchData();
         return "Successfully fetched data!";
     }
+
+    @GetMapping("/testSave")
+    @ResponseStatus(HttpStatus.OK)
+    public String testDatabaseSave() {
+        userService.saveDummyData();
+        return "Test save triggered!";
+    }
+
 
     @DeleteMapping("/newpatch")
     @ResponseStatus(HttpStatus.OK)

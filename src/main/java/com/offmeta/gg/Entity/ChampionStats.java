@@ -51,29 +51,40 @@ public class ChampionStats {
     }
 
     public List<String> getMostCommonItemBuild() {
-        return itemBuildFrequency.entrySet()
-                .stream()
-                .max(Comparator.comparingInt(Map.Entry::getValue))
-                .map(Map.Entry::getKey)
-                .orElse(Collections.emptyList());
+        Map.Entry<List<String>, Integer> mostCommonEntry = null;
+        for(Map.Entry<List<String>, Integer> entry : itemBuildFrequency.entrySet()) {
+            if (mostCommonEntry == null || entry.getValue().compareTo(mostCommonEntry.getValue()) > 0) {
+                mostCommonEntry = entry;
+            }
+        }
+
+        return mostCommonEntry != null ? mostCommonEntry.getKey() : Collections.emptyList();
     }
 
     public String getMostCommonSummonerSpell1() {
-        return summonerSpellFrequency.entrySet()
-                .stream()
-                .max(Comparator.comparingInt(Map.Entry::getValue))
-                .map(Map.Entry::getKey)
-                .orElse(null);
+        Map.Entry<String, Integer> mostCommonEntry = null;
+        for(Map.Entry<String, Integer> entry : summonerSpellFrequency.entrySet()) {
+            if (mostCommonEntry == null || entry.getValue().compareTo(mostCommonEntry.getValue()) > 0) {
+                mostCommonEntry = entry;
+            }
+        }
+
+        return mostCommonEntry != null ? mostCommonEntry.getKey() : null;
     }
 
     public String getMostCommonSummonerSpell2() {
         String mostCommonSpell1 = getMostCommonSummonerSpell1();
-        return summonerSpellFrequency.entrySet()
-                .stream()
-                .filter(entry -> !entry.getKey().equals(mostCommonSpell1))
-                .max(Comparator.comparingInt(Map.Entry::getValue))
-                .map(Map.Entry::getKey)
-                .orElse(null);
+
+        Map.Entry<String, Integer> mostCommonEntry = null;
+        for(Map.Entry<String, Integer> entry : summonerSpellFrequency.entrySet()) {
+            if (!entry.getKey().equals(mostCommonSpell1)) {
+                if (mostCommonEntry == null || entry.getValue().compareTo(mostCommonEntry.getValue()) > 0) {
+                    mostCommonEntry = entry;
+                }
+            }
+        }
+
+        return mostCommonEntry != null ? mostCommonEntry.getKey() : null;
     }
 }
 

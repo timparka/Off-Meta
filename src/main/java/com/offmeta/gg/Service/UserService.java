@@ -24,6 +24,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 @Service
@@ -34,113 +36,174 @@ public class UserService {
 
     private LeagueShard region = LeagueShard.NA1;
     private RegionShard regionShard = RegionShard.AMERICAS;
+    //separate variable for just smite as value is null when smite is upgraded into its empowered version
     private static final int SMITE_SPELL_ID = 11;
 
     @Autowired
     private R4J api;
+
+    private static final Logger logger = Logger.getLogger(UserService.class.getName());
 
     public UserService(@Value("${api.key}") String apiKey) {
         this.api = new R4J(new APICredentials(apiKey));
     }
 
     public void fetchData() {
-        List<String> summonerIds = getTopPlayerIds();
-        Set<String> uniqueMatchIds = getUniqueMatchIds(summonerIds);
+        try {
+            logger.info("Fetching data started...");
 
-        //these maps just hold relevant information of the game as the names suggest
-        Map<Integer, StaticChampion> champData = api.getDDragonAPI().getChampions();
-        Map<Integer, StaticSummonerSpell> spellData = api.getDDragonAPI().getSummonerSpells();
-        Map<Integer, Item> itemData = api.getDDragonAPI().getItems();
+            List<String> summonerIds = getTopPlayerIds();
+            logger.info("Fetched top player IDs: " + summonerIds.size());
 
-        saveParticipants(uniqueMatchIds, champData, spellData, itemData);
+            Set<String> uniqueMatchIds = getUniqueMatchIds(summonerIds);
+            logger.info("Fetched unique match IDs: " + uniqueMatchIds.size());
+
+            Map<Integer, StaticChampion> champData = api.getDDragonAPI().getChampions();
+            Map<Integer, StaticSummonerSpell> spellData = api.getDDragonAPI().getSummonerSpells();
+            Map<Integer, Item> itemData = api.getDDragonAPI().getItems();
+
+            saveParticipants(uniqueMatchIds, champData, spellData, itemData);
+            logger.info("Fetching data completed.");
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Failed to fetch data.", e);
+        }
     }
 
     private List<String> getTopPlayerIds() {
-        List<LeagueEntry> challengerEntries = LeagueAPI.getInstance().getLeagueByTierDivision(region, GameQueueType.RANKED_SOLO_5X5, TierDivisionType.CHALLENGER_I, 1);
-        List<LeagueEntry> grandmasterEntries = LeagueAPI.getInstance().getLeagueByTierDivision(region, GameQueueType.RANKED_SOLO_5X5, TierDivisionType.GRANDMASTER_I, 1);
-        List<LeagueEntry> masterEntries = LeagueAPI.getInstance().getLeagueByTierDivision(region, GameQueueType.RANKED_SOLO_5X5, TierDivisionType.MASTER_I, 1);
+        try {
 
-        List<String> summonerIds = new ArrayList<>();
-        //gets players summonerId and puts into summonerIds list
-        summonerIds.addAll(challengerEntries.stream().map(LeagueEntry::getSummonerId).collect(Collectors.toList()));
-        summonerIds.addAll(grandmasterEntries.stream().map(LeagueEntry::getSummonerId).collect(Collectors.toList()));
-        summonerIds.addAll(masterEntries.stream().map(LeagueEntry::getSummonerId).collect(Collectors.toList()));
-        return summonerIds;
+            List<LeagueEntry> challengerEntries = LeagueAPI.getInstance().getLeagueByTierDivision(region, GameQueueType.RANKED_SOLO_5X5, TierDivisionType.CHALLENGER_I, 1);
+            List<LeagueEntry> grandmasterEntries = LeagueAPI.getInstance().getLeagueByTierDivision(region, GameQueueType.RANKED_SOLO_5X5, TierDivisionType.GRANDMASTER_I, 1);
+            List<LeagueEntry> masterEntries = LeagueAPI.getInstance().getLeagueByTierDivision(region, GameQueueType.RANKED_SOLO_5X5, TierDivisionType.MASTER_I, 1);
+
+            List<String> summonerIds = new ArrayList<>();
+            //gets players summonerId and puts into summonerIds list
+            summonerIds.addAll(challengerEntries.stream().map(LeagueEntry::getSummonerId).collect(Collectors.toList()));
+            summonerIds.addAll(grandmasterEntries.stream().map(LeagueEntry::getSummonerId).collect(Collectors.toList()));
+            summonerIds.addAll(masterEntries.stream().map(LeagueEntry::getSummonerId).collect(Collectors.toList()));
+            return summonerIds;
+
+        } catch (Exception e) {
+            logger.warning("Failed to get top player IDs: " + e.getMessage());
+            return Collections.emptyList();
+        }
     }
 
     private Set<String> getUniqueMatchIds(List<String> summonerIds) {
         Set<String> uniqueMatchIds = new HashSet<>();
 
-        // Getting match IDs
-        for (String summonerId : summonerIds) {
-            Summoner summoner = new SummonerBuilder().withPlatform(region).withSummonerId(summonerId).get();
-            MatchV5API matchV5API = MatchV5API.getInstance();
-            List<String> matches = matchV5API.getMatchList(regionShard, summoner.getPUUID(), GameQueueType.RANKED_SOLO_5X5, null, 0, 10, null, null);
+        try {
 
-            // Add match IDs to the HashSet
-            uniqueMatchIds.addAll(matches);
+            // Getting match IDs
+            for (String summonerId : summonerIds) {
+                Summoner summoner = new SummonerBuilder().withPlatform(region).withSummonerId(summonerId).get();
+                MatchV5API matchV5API = MatchV5API.getInstance();
+                List<String> matches = matchV5API.getMatchList(regionShard, summoner.getPUUID(), GameQueueType.TEAM_BUILDER_RANKED_SOLO, null, 0, 10, null, null);
+
+                if (matches == null || matches.isEmpty()) {
+                    logger.warning("No matches found for PUUID: " + summoner.getPUUID());
+                } else {
+                    // Add match IDs to the HashSet
+                    uniqueMatchIds.addAll(matches);
+                }
+            }
+        } catch (Exception e) {
+            logger.warning("Failed to get unique match IDs: " + e.getMessage());
         }
+        logger.info("Fetched unique match IDs: " + uniqueMatchIds.size());
         return uniqueMatchIds;
     }
 
     private void saveParticipants(Set<String> uniqueMatchIds, Map<Integer, StaticChampion> champData, Map<Integer,
             StaticSummonerSpell> spellData, Map<Integer, Item> itemData) {
         List<ParticipantEntity> participantEntities = new ArrayList<>();
-        String currentVersion = api.getDDragonAPI().getVersions().get(0);
 
-        for (String matchId : uniqueMatchIds) {
-            LOLMatch match = LOLMatch.get(regionShard, matchId);
-            List<MatchParticipant> participants = match.getParticipants();
+        try {
+            String currentVersion = api.getDDragonAPI().getVersions().get(0);
 
-            for (MatchParticipant participant : participants) {
-                StaticChampion participantChampion = champData.get(participant.getChampionId());
-                String championImageUrl = String.format("http://ddragon.leagueoflegends.com/cdn/%s/img/champion/%s", currentVersion, participantChampion.getImage().getFull());
-                StaticSummonerSpell summonerSpell1 = spellData.get(participant.getSummoner1Id());
-                StaticSummonerSpell summonerSpell2 = spellData.get(participant.getSummoner2Id());
+            for (String matchId : uniqueMatchIds) {
+                LOLMatch match = LOLMatch.get(regionShard, matchId);
+                List<MatchParticipant> participants = match.getParticipants();
 
-                if (summonerSpell1 == null) {
-                    summonerSpell1 = spellData.get(SMITE_SPELL_ID);
+                for (MatchParticipant participant : participants) {
+                    StaticChampion participantChampion = champData.get(participant.getChampionId());
+                    String championImageUrl = String.format("http://ddragon.leagueoflegends.com/cdn/%s/img/champion/%s", currentVersion, participantChampion.getImage().getFull());
+                    StaticSummonerSpell summonerSpell1 = spellData.get(participant.getSummoner1Id());
+                    StaticSummonerSpell summonerSpell2 = spellData.get(participant.getSummoner2Id());
+
+                    if (summonerSpell1 == null) {
+                        summonerSpell1 = spellData.get(SMITE_SPELL_ID);
+                    }
+                    if (summonerSpell2 == null) {
+                        summonerSpell2 = spellData.get(SMITE_SPELL_ID);
+                    }
+
+                    ParticipantEntity participantEntity = new ParticipantEntity(
+                            null,
+                            participantChampion.getName(),
+                            participant.getChampionId(),
+                            participant.didWin(),
+                            getItemNames(participant, itemData),
+                            summonerSpell1.getName(),
+                            summonerSpell2.getName(),
+                            String.valueOf(participant.getChampionSelectLane()),
+                            championImageUrl
+                    );
+
+                    participantEntities.add(participantEntity);
                 }
-                if (summonerSpell2 == null) {
-                    summonerSpell2 = spellData.get(SMITE_SPELL_ID);
-                }
-
-                ParticipantEntity participantEntity = new ParticipantEntity(
-                        null,
-                        participantChampion.getName(),
-                        participant.getChampionId(),
-                        participant.didWin(),
-                        getItemNames(participant, itemData),
-                        summonerSpell1.getName(),
-                        summonerSpell2.getName(),
-                        String.valueOf(participant.getChampionSelectLane()),
-                        championImageUrl
-                );
-
-                participantEntities.add(participantEntity);
             }
+            logger.info("Number of participants to save: " + participantEntities.size());
+            participantRepository.saveAll(participantEntities);
+            logger.info("Saved participants to the database.");
+        } catch (Exception e) {
+            logger.warning("Failed to save participants: " + e.getMessage());
         }
-        participantRepository.saveAll(participantEntities);
     }
 
     private List<String> getItemNames(MatchParticipant participant, Map<Integer, Item> itemData) {
         List<String> itemNames = new ArrayList<>();
-        List<Integer> itemIds = Arrays.asList(participant.getItem0(), participant.getItem1(), participant.getItem2(), participant.getItem3(),
-                participant.getItem4(), participant.getItem5(), participant.getItem6());
+        try {
+            List<Integer> itemIds = Arrays.asList(participant.getItem0(), participant.getItem1(), participant.getItem2(), participant.getItem3(),
+                    participant.getItem4(), participant.getItem5(), participant.getItem6());
 
-        for (int itemId : itemIds) {
-            if (itemId != 0) {
-                Item item = itemData.get(itemId);
-                if(item != null) {
-                    itemNames.add(item.getName());
+            for (int itemId : itemIds) {
+                if (itemId != 0) {
+                    Item item = itemData.get(itemId);
+                    if(item != null) {
+                        itemNames.add(item.getName());
+                    }
                 }
             }
+        } catch (Exception e) {
+            logger.warning("Failed to get item names: " + e.getMessage());
         }
         return itemNames;
     }
 
     public void newPatchData() {
         participantRepository.deleteAll();
+    }
+
+    public void saveDummyData() {
+        try {
+            ParticipantEntity dummyParticipant = new ParticipantEntity(
+                    null,               // let MongoDB handle the ID generation
+                    "TestChampion",        // Dummy champion name
+                    9999,                  // Dummy champion ID
+                    true,                  // Dummy win status
+                    Arrays.asList("Item1", "Item2", "Item3"), // Dummy items
+                    "Spell1",              // Dummy summoner spell 1
+                    "Spell2",              // Dummy summoner spell 2
+                    "MID",                 // Dummy role
+                    "http://testurl.com"   // Dummy image URL
+            );
+
+            participantRepository.save(dummyParticipant);
+            logger.info("Dummy data saved successfully.");
+        } catch(Exception e) {
+            logger.warning("Failed to save dummy data: " + e.getMessage());
+        }
     }
 
 }

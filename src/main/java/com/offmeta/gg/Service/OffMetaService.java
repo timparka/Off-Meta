@@ -26,9 +26,12 @@ public class OffMetaService {
         List<ChampionStats> championStatsList = sortChampionStatsList(championStatsMap);
 
         // Filter champions that have been played in at least 10 matches
-        List<ChampionStats> filteredChampionStatsList = championStatsList.stream()
-                .filter(championStats -> championStats.getGamesPlayed() >= 300)
-                .collect(Collectors.toList());
+        List<ChampionStats> filteredChampionStatsList = new ArrayList<>();
+        for (ChampionStats championStats : championStatsList) {
+            if (championStats.getGamesPlayed() >= 300) {
+                filteredChampionStatsList.add(championStats);
+            }
+        }
 
         ChampionStats bestChampion;
 
@@ -53,10 +56,17 @@ public class OffMetaService {
 
 
     private List<ParticipantEntity> filterParticipantsByLane(List<ParticipantEntity> participants, String lane) {
-        return participants.stream()
-                .filter(participant -> lane.equalsIgnoreCase(participant.getRole()))
-                .collect(Collectors.toList());
+        List<ParticipantEntity> filteredParticipants = new ArrayList<>();
+
+        for (ParticipantEntity participant : participants) {
+            if (lane.equalsIgnoreCase(participant.getRole())) {
+                filteredParticipants.add(participant);
+            }
+        }
+
+        return filteredParticipants;
     }
+
 
     private int calculateTotalMatches(List<ParticipantEntity> laneParticipants) {
         return laneParticipants.size() / 10;

@@ -24,5 +24,4 @@ public class ParticipantEntity {
     private String summonerSpell2;
     private String role;
     private String championImageUrl;
-
 }
