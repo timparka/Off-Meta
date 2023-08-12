@@ -15,7 +15,7 @@ public class OffMetaDTO {
     @JsonProperty("championName")
     private String championName;
     @JsonProperty("items")
-    private List<String> items;
+    private List<Integer> items;
     @JsonProperty("summonerSpell1")
     private String summonerSpell1;
     @JsonProperty("summonerSpell2")

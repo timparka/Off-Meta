@@ -98,7 +98,7 @@ public class UserService {
             for (String summonerId : summonerIds) {
                 Summoner summoner = new SummonerBuilder().withPlatform(region).withSummonerId(summonerId).get();
                 MatchV5API matchV5API = MatchV5API.getInstance();
-                List<String> matches = matchV5API.getMatchList(regionShard, summoner.getPUUID(), GameQueueType.TEAM_BUILDER_RANKED_SOLO, null, 0, 10, null, null);
+                List<String> matches = matchV5API.getMatchList(regionShard, summoner.getPUUID(), GameQueueType.TEAM_BUILDER_RANKED_SOLO, null, 0, 15, null, null);
 
                 if (matches == null || matches.isEmpty()) {
                     logger.warning("No matches found for PUUID: " + summoner.getPUUID());
@@ -143,7 +143,7 @@ public class UserService {
                             participantChampion.getName(),
                             participant.getChampionId(),
                             participant.didWin(),
-                            getItemNames(participant, itemData),
+                            getItemIds(participant),
                             summonerSpell1.getName(),
                             summonerSpell2.getName(),
                             String.valueOf(participant.getChampionSelectLane()),
@@ -161,25 +161,26 @@ public class UserService {
         }
     }
 
-    private List<String> getItemNames(MatchParticipant participant, Map<Integer, Item> itemData) {
-        List<String> itemNames = new ArrayList<>();
+    private List<Integer> getItemIds(MatchParticipant participant) {
+        List<Integer> itemIds = new ArrayList<>();
         try {
-            List<Integer> itemIds = Arrays.asList(participant.getItem0(), participant.getItem1(), participant.getItem2(), participant.getItem3(),
-                    participant.getItem4(), participant.getItem5(), participant.getItem6());
+            // Adding all items to the list
+            itemIds.addAll(Arrays.asList(
+                    participant.getItem0(),
+                    participant.getItem1(),
+                    participant.getItem2(),
+                    participant.getItem3(),
+                    participant.getItem4(),
+                    participant.getItem5(),
+                    participant.getItem6()
+            ));
 
-            for (int itemId : itemIds) {
-                if (itemId != 0) {
-                    Item item = itemData.get(itemId);
-                    if(item != null) {
-                        itemNames.add(item.getName());
-                    }
-                }
-            }
         } catch (Exception e) {
             logger.warning("Failed to get item names: " + e.getMessage());
         }
-        return itemNames;
+        return itemIds;
     }
+
 
     public void newPatchData() {
         participantRepository.deleteAll();
@@ -192,7 +193,7 @@ public class UserService {
                     "TestChampion",        // Dummy champion name
                     9999,                  // Dummy champion ID
                     true,                  // Dummy win status
-                    Arrays.asList("Item1", "Item2", "Item3"), // Dummy items
+                    Arrays.asList(1000, 2000, 3000), // Dummy items
                     "Spell1",              // Dummy summoner spell 1
                     "Spell2",              // Dummy summoner spell 2
                     "MID",                 // Dummy role

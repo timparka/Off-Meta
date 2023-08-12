@@ -11,7 +11,7 @@ public class ChampionStats {
     private int wins;
     private double winRate;
     private double pickRate;
-    private Map<List<String>, Integer> itemBuildFrequency;
+    private Map<List<Integer>, Integer> itemBuildFrequency;
     private Map<String, Integer> summonerSpellFrequency;
     private String championImageUrl;
 
@@ -32,7 +32,7 @@ public class ChampionStats {
         this.wins++;
     }
 
-    public void addItemBuild(List<String> items) {
+    public void addItemBuild(List<Integer> items) {
         itemBuildFrequency.putIfAbsent(items, 0);
         itemBuildFrequency.put(items, itemBuildFrequency.get(items) + 1);
     }
@@ -50,16 +50,20 @@ public class ChampionStats {
         this.pickRate = (double) this.gamesPlayed / totalMatches;
     }
 
-    public List<String> getMostCommonItemBuild() {
-        Map.Entry<List<String>, Integer> mostCommonEntry = null;
-        for(Map.Entry<List<String>, Integer> entry : itemBuildFrequency.entrySet()) {
-            if (mostCommonEntry == null || entry.getValue().compareTo(mostCommonEntry.getValue()) > 0) {
-                mostCommonEntry = entry;
+    public List<Integer> getMostCommonItemBuild() {
+        Map.Entry<List<Integer>, Integer> mostCommonEntry = null;
+        for (Map.Entry<List<Integer>, Integer> entry : itemBuildFrequency.entrySet()) {
+            // Ensure that the item build doesn't have a 0 value
+            if (!entry.getKey().contains(0)) {
+                if (mostCommonEntry == null || entry.getValue().compareTo(mostCommonEntry.getValue()) > 0) {
+                    mostCommonEntry = entry;
+                }
             }
         }
 
         return mostCommonEntry != null ? mostCommonEntry.getKey() : Collections.emptyList();
     }
+
 
     public String getMostCommonSummonerSpell1() {
         Map.Entry<String, Integer> mostCommonEntry = null;
@@ -69,7 +73,14 @@ public class ChampionStats {
             }
         }
 
-        return mostCommonEntry != null ? mostCommonEntry.getKey() : null;
+        String result = mostCommonEntry != null ? mostCommonEntry.getKey() : null;
+        if ("ignite".equalsIgnoreCase(result)) {
+            return "Dot";
+        } else if ("cleanse".equalsIgnoreCase(result)) {
+            return "Boost";
+        } else {
+            return result;
+        }
     }
 
     public String getMostCommonSummonerSpell2() {
@@ -84,8 +95,16 @@ public class ChampionStats {
             }
         }
 
-        return mostCommonEntry != null ? mostCommonEntry.getKey() : null;
+        String result = mostCommonEntry != null ? mostCommonEntry.getKey() : null;
+        if ("ignite".equalsIgnoreCase(result)) {
+            return "Dot";
+        } else if ("cleanse".equalsIgnoreCase(result)) {
+            return "Boost";
+        } else {
+            return result;
+        }
     }
+
 }
 
 

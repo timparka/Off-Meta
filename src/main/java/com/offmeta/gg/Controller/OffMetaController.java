@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/participant")
+@CrossOrigin(origins = "http://localhost:4200")
 @RequiredArgsConstructor
 public class OffMetaController {
     @Autowired

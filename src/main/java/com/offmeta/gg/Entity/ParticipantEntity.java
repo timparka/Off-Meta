@@ -19,7 +19,7 @@ public class ParticipantEntity {
     private String championName;
     private int championId;
     private boolean win;
-    private List<String> items;
+    private List<Integer> items;
     private String summonerSpell1;
     private String summonerSpell2;
     private String role;
