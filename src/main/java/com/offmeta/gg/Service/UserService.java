@@ -2,6 +2,7 @@ package com.offmeta.gg.Service;
 
 import com.offmeta.gg.Entity.ParticipantEntity;
 import com.offmeta.gg.Repository.ParticipantRepository;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import no.stelar7.api.r4j.basic.APICredentials;
 import no.stelar7.api.r4j.basic.constants.api.regions.LeagueShard;
@@ -21,6 +22,7 @@ import no.stelar7.api.r4j.pojo.lol.staticdata.summonerspell.StaticSummonerSpell;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -33,23 +35,33 @@ import java.util.stream.Collectors;
 public class UserService {
     @Autowired
     private ParticipantRepository participantRepository;
-
     private LeagueShard region = LeagueShard.NA1;
     private RegionShard regionShard = RegionShard.AMERICAS;
     //separate variable for just smite as value is null when smite is upgraded into its empowered version
     private static final int SMITE_SPELL_ID = 11;
-
     @Autowired
-    private R4J api;
-
+    private RiotApiService riotApiService;
+    private String currentPatch;
     private static final Logger logger = Logger.getLogger(UserService.class.getName());
 
-    public UserService(@Value("${api.key}") String apiKey) {
-        this.api = new R4J(new APICredentials(apiKey));
+    @Scheduled(cron = "0 0 0 * * SUN")  // runs every Sunday at midnight
+    public void scheduledFetchData() {
+        String newPatch = riotApiService.getApi().getDDragonAPI().getVersions().get(0);
+
+        // Check if a new patch has been released
+        if (!newPatch.equals(currentPatch)) {
+            // A new patch has been released. Clear old data and update current patch
+            newPatchData();
+            this.currentPatch = newPatch;
+        }
+
+        // Fetch and store new data
+        fetchData();
     }
 
     public void fetchData() {
         try {
+            R4J api = riotApiService.getApi();
             logger.info("Fetching data started...");
 
             List<String> summonerIds = getTopPlayerIds();
@@ -98,7 +110,7 @@ public class UserService {
             for (String summonerId : summonerIds) {
                 Summoner summoner = new SummonerBuilder().withPlatform(region).withSummonerId(summonerId).get();
                 MatchV5API matchV5API = MatchV5API.getInstance();
-                List<String> matches = matchV5API.getMatchList(regionShard, summoner.getPUUID(), GameQueueType.TEAM_BUILDER_RANKED_SOLO, null, 0, 15, null, null);
+                List<String> matches = matchV5API.getMatchList(regionShard, summoner.getPUUID(), GameQueueType.TEAM_BUILDER_RANKED_SOLO, null, 0, 10, null, null);
 
                 if (matches == null || matches.isEmpty()) {
                     logger.warning("No matches found for PUUID: " + summoner.getPUUID());
@@ -114,12 +126,31 @@ public class UserService {
         return uniqueMatchIds;
     }
 
+    private List<Integer> getFilteredItemIds(MatchParticipant participant, Map<Integer, Item> itemData) {
+        List<Integer> itemIds = getItemIds(participant);
+        List<Integer> filteredItemIds = new ArrayList<>();
+
+        for (Integer itemId : itemIds) {
+            Item item = itemData.get(itemId);
+            if (item != null) {
+                List<String> tags = item.getTags();
+                System.out.println(tags);
+
+                if (tags.contains("Legendary") || tags.contains("Mythic") || (tags.contains("Boots"))) {
+                    filteredItemIds.add(itemId);
+                }
+            }
+        }
+
+        return filteredItemIds;
+    }
+
     private void saveParticipants(Set<String> uniqueMatchIds, Map<Integer, StaticChampion> champData, Map<Integer,
             StaticSummonerSpell> spellData, Map<Integer, Item> itemData) {
         List<ParticipantEntity> participantEntities = new ArrayList<>();
 
         try {
-            String currentVersion = api.getDDragonAPI().getVersions().get(0);
+            String currentVersion = riotApiService.getApi().getDDragonAPI().getVersions().get(0);
 
             for (String matchId : uniqueMatchIds) {
                 LOLMatch match = LOLMatch.get(regionShard, matchId);
@@ -143,7 +174,7 @@ public class UserService {
                             participantChampion.getName(),
                             participant.getChampionId(),
                             participant.didWin(),
-                            getItemIds(participant),
+                            getFilteredItemIds(participant, itemData),
                             summonerSpell1.getName(),
                             summonerSpell2.getName(),
                             String.valueOf(participant.getChampionSelectLane()),
@@ -179,6 +210,26 @@ public class UserService {
             logger.warning("Failed to get item names: " + e.getMessage());
         }
         return itemIds;
+    }
+
+    public String getCurrentPatch() {
+        // Fetch the latest patch directly from the API
+        String latestPatch = riotApiService.getApi().getDDragonAPI().getVersions().get(0);
+
+        // Log the fetched value for debugging
+        logger.info("Latest patch fetched: " + latestPatch);
+
+        // Check if the fetched patch is not null
+        if (latestPatch != null) {
+            // Update the currentPatch variable
+            this.currentPatch = latestPatch;
+        } else {
+            // Handle the case where the latest patch couldn't be fetched
+            logger.warning("Failed to fetch the latest patch. Using the last known value.");
+        }
+
+        // Return the currentPatch (either updated or last known)
+        return this.currentPatch;
     }
 
 

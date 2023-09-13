@@ -17,6 +17,9 @@ public class OffMetaService {
     @Autowired
     private ParticipantRepository participantRepository;
 
+    @Autowired
+    private ChampionStatsService championStatsService;
+
     public OffMetaDTO getOffMetaPick(String lane) {
         List<ParticipantEntity> participants = participantRepository.findAll();
         List<ParticipantEntity> laneParticipants = filterParticipantsByLane(participants, lane);
@@ -104,9 +107,9 @@ public class OffMetaService {
     private OffMetaDTO buildOffMetaDTO(ChampionStats bestChampion, String lane) {
         OffMetaDTO offMetaPick = new OffMetaDTO();
         offMetaPick.setChampionName(bestChampion.getChampionName());
-        offMetaPick.setItems(bestChampion.getMostCommonItemBuild());
-        offMetaPick.setSummonerSpell1(bestChampion.getMostCommonSummonerSpell1());
-        offMetaPick.setSummonerSpell2(bestChampion.getMostCommonSummonerSpell2());
+        offMetaPick.setItems(championStatsService.getMostCommonItemBuild(bestChampion));
+        offMetaPick.setSummonerSpell1(championStatsService.getMostCommonSummonerSpell1(bestChampion));
+        offMetaPick.setSummonerSpell2(championStatsService.getMostCommonSummonerSpell2(bestChampion));
         offMetaPick.setRole(lane);
         offMetaPick.setWinRate(bestChampion.getWinRate());
         offMetaPick.setPickRate(bestChampion.getPickRate());

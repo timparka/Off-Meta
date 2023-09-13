@@ -13,7 +13,6 @@ public class R4JConfig {
 
     @Bean
     public R4J r4j() {
-        // Use APICredentials with your API key
         return new R4J(new APICredentials(apiKey));
     }
 }

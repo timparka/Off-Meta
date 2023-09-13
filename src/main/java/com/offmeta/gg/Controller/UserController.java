@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/user")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "http://localhost:4200")
 public class UserController {
 
 //    @Autowired
@@ -49,4 +50,13 @@ public class UserController {
         userService.newPatchData();
         return "Successfully cleared data!";
     }
+
+    @GetMapping("/currentPatch")
+    public String getCurrentPatch() {
+        System.out.println("Endpoint /currentPatch hit");
+        String patch = userService.getCurrentPatch();
+        System.out.println("Current patch is: " + patch);
+        return patch;
+    }
+
 }

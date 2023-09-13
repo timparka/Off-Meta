@@ -1,8 +1,14 @@
 package com.offmeta.gg.Entity;
 
+import com.offmeta.gg.Service.RiotApiService;
 import lombok.Getter;
+import no.stelar7.api.r4j.impl.R4J;
+import no.stelar7.api.r4j.pojo.lol.staticdata.item.Item;
+import org.springframework.beans.factory.annotation.Autowired;
+
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Getter
 public class ChampionStats {
@@ -32,6 +38,11 @@ public class ChampionStats {
         this.wins++;
     }
 
+    public void calculateWinRateAndPickRate(int totalMatches) {
+        this.winRate = (double) this.wins / this.gamesPlayed;
+        this.pickRate = (double) this.gamesPlayed / totalMatches;
+    }
+
     public void addItemBuild(List<Integer> items) {
         itemBuildFrequency.putIfAbsent(items, 0);
         itemBuildFrequency.put(items, itemBuildFrequency.get(items) + 1);
@@ -45,66 +56,15 @@ public class ChampionStats {
         }
     }
 
-    public void calculateWinRateAndPickRate(int totalMatches) {
-        this.winRate = (double) this.wins / this.gamesPlayed;
-        this.pickRate = (double) this.gamesPlayed / totalMatches;
+    public Map<List<Integer>, Integer> getItemBuildFrequency() {
+        return this.itemBuildFrequency;
     }
 
-    public List<Integer> getMostCommonItemBuild() {
-        Map.Entry<List<Integer>, Integer> mostCommonEntry = null;
-        for (Map.Entry<List<Integer>, Integer> entry : itemBuildFrequency.entrySet()) {
-            // Ensure that the item build doesn't have a 0 value
-            if (!entry.getKey().contains(0)) {
-                if (mostCommonEntry == null || entry.getValue().compareTo(mostCommonEntry.getValue()) > 0) {
-                    mostCommonEntry = entry;
-                }
-            }
-        }
-
-        return mostCommonEntry != null ? mostCommonEntry.getKey() : Collections.emptyList();
+    public Map<String, Integer> getSummonerSpellFrequency() {
+        return this.summonerSpellFrequency;
     }
-
-
-    public String getMostCommonSummonerSpell1() {
-        Map.Entry<String, Integer> mostCommonEntry = null;
-        for(Map.Entry<String, Integer> entry : summonerSpellFrequency.entrySet()) {
-            if (mostCommonEntry == null || entry.getValue().compareTo(mostCommonEntry.getValue()) > 0) {
-                mostCommonEntry = entry;
-            }
-        }
-
-        String result = mostCommonEntry != null ? mostCommonEntry.getKey() : null;
-        if ("ignite".equalsIgnoreCase(result)) {
-            return "Dot";
-        } else if ("cleanse".equalsIgnoreCase(result)) {
-            return "Boost";
-        } else {
-            return result;
-        }
-    }
-
-    public String getMostCommonSummonerSpell2() {
-        String mostCommonSpell1 = getMostCommonSummonerSpell1();
-
-        Map.Entry<String, Integer> mostCommonEntry = null;
-        for(Map.Entry<String, Integer> entry : summonerSpellFrequency.entrySet()) {
-            if (!entry.getKey().equals(mostCommonSpell1)) {
-                if (mostCommonEntry == null || entry.getValue().compareTo(mostCommonEntry.getValue()) > 0) {
-                    mostCommonEntry = entry;
-                }
-            }
-        }
-
-        String result = mostCommonEntry != null ? mostCommonEntry.getKey() : null;
-        if ("ignite".equalsIgnoreCase(result)) {
-            return "Dot";
-        } else if ("cleanse".equalsIgnoreCase(result)) {
-            return "Boost";
-        } else {
-            return result;
-        }
-    }
-
 }
+
+
 
 
