@@ -3,11 +3,14 @@ name: Spring Boot CI/CD
 on:
   push:
     branches:
-      - main  # Trigger the workflow on push to the 'main' branch
+      - main
+
+env:
+  API_KEY: ${{ secrets.API_KEY }}
 
 jobs:
   build:
-    runs-on: ubuntu-latest  # GitHub Actions runner environment
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
@@ -37,4 +40,3 @@ jobs:
           username: ec2-user
           key: ${{ secrets.SSH_KEY }}
           script: sudo systemctl restart offmeta.service
-
