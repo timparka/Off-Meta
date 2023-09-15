@@ -31,7 +31,7 @@ jobs:
           username: ec2-user
           key: ${{ secrets.SSH_KEY }}
           source: "target/gg-0.0.1-SNAPSHOT.jar"
-          target: "/home/ec2-user/Off-Meta.gg"
+          target: "/home/ec2-user/Off-Meta.gg/target"
 
       - name: Restart Systemd Service on EC2
         uses: appleboy/ssh-action@master
