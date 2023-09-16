@@ -6,6 +6,7 @@ on:
       - main
 
 env:
+  SPRING_DATA_MONGODB_URI: ${{ secrets.SPRING_DATA_MONGODB_URI }}
   API_KEY: ${{ secrets.API_KEY }}
 
 jobs:
