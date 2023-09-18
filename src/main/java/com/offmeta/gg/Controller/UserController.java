@@ -36,7 +36,7 @@ public class UserController {
         return "Successfully fetched data!";
     }
 
-    @GetMapping("/testSave")
+    @PostMapping("/testSave")
     @ResponseStatus(HttpStatus.OK)
     public String testDatabaseSave() {
         userService.saveDummyData();

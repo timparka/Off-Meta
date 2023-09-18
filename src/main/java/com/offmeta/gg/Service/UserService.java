@@ -70,6 +70,7 @@ public class UserService {
             Set<String> uniqueMatchIds = getUniqueMatchIds(summonerIds);
             logger.info("Fetched unique match IDs: " + uniqueMatchIds.size());
 
+
             Map<Integer, StaticChampion> champData = api.getDDragonAPI().getChampions();
             Map<Integer, StaticSummonerSpell> spellData = api.getDDragonAPI().getSummonerSpells();
             Map<Integer, Item> itemData = api.getDDragonAPI().getItems();
@@ -154,10 +155,21 @@ public class UserService {
 
             for (String matchId : uniqueMatchIds) {
                 LOLMatch match = LOLMatch.get(regionShard, matchId);
+                if (match == null) {
+                    logger.warning("No match found for match ID: " + matchId);
+                    continue;  // skip to the next iteration of the loop
+                }
                 List<MatchParticipant> participants = match.getParticipants();
+
 
                 for (MatchParticipant participant : participants) {
                     StaticChampion participantChampion = champData.get(participant.getChampionId());
+
+                    if (participantChampion == null) {
+                        logger.warning("Champion data is null for champion ID: " + participant.getChampionId());
+                        continue;  // Skip this iteration and move to the next one
+                    }
+
                     String championImageUrl = String.format("http://ddragon.leagueoflegends.com/cdn/%s/img/champion/%s", currentVersion, participantChampion.getImage().getFull());
                     StaticSummonerSpell summonerSpell1 = spellData.get(participant.getSummoner1Id());
                     StaticSummonerSpell summonerSpell2 = spellData.get(participant.getSummoner2Id());
