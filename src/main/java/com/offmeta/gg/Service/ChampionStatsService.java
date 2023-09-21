@@ -73,7 +73,9 @@ public class ChampionStatsService {
                 if (tagMatch) {
                     if (mythicAdded && item.getDescription().contains("Mythic Passive:")) continue;
                     if (bootsAdded && item.getTags().contains("Boots")) continue;
-                    top6Keys.add(itemId);
+                    if (!top6Keys.contains(itemId)) {
+                        top6Keys.add(itemId);
+                    }
                 }
             }
 
@@ -90,7 +92,9 @@ public class ChampionStatsService {
             if (item != null && (item.getTags().contains("Damage") || item.getTags().contains("SpellDamage") || item.getTags().contains("Defense"))) {
                 if (mythicAdded && item.getDescription().contains("Mythic Passive:")) continue;
                 if (bootsAdded && item.getTags().contains("Boots")) continue;
-                top6Keys.add(itemId);
+                if (!top6Keys.contains(itemId)) {
+                    top6Keys.add(itemId);
+                }
             }
             if (top6Keys.size() >= 6) {
                 break;
