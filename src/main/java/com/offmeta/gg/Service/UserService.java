@@ -112,7 +112,7 @@ public class UserService {
             for (String summonerId : summonerIds) {
                 Summoner summoner = new SummonerBuilder().withPlatform(region).withSummonerId(summonerId).get();
                 MatchV5API matchV5API = MatchV5API.getInstance();
-                List<String> matches = matchV5API.getMatchList(regionShard, summoner.getPUUID(), GameQueueType.TEAM_BUILDER_RANKED_SOLO, null, 0, 1, null, null);
+                List<String> matches = matchV5API.getMatchList(regionShard, summoner.getPUUID(), GameQueueType.TEAM_BUILDER_RANKED_SOLO, null, 0, 10, null, null);
 
                 if (matches == null || matches.isEmpty()) {
                     logger.warning("No matches found for PUUID: " + summoner.getPUUID());
