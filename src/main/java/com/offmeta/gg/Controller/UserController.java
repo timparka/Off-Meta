@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/user")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://timparkaoffmetafe.s3-website-us-east-1.amazonaws.com")
+@CrossOrigin(origins = {"http://timparkaoffmetafe.s3-website-us-east-1.amazonaws.com", "http://localhost:4200"})
 public class UserController {
 
 //    @Autowired
@@ -44,7 +44,7 @@ public class UserController {
     }
 
 
-    @DeleteMapping("/newpatch")
+    @DeleteMapping("/newPatch")
     @ResponseStatus(HttpStatus.OK)
     public String newPatchData() {
         userService.newPatchData();

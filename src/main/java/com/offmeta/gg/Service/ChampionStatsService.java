@@ -1,6 +1,7 @@
 package com.offmeta.gg.Service;
 
 import com.offmeta.gg.Entity.ChampionStats;
+import no.stelar7.api.r4j.basic.utils.Pair;
 import no.stelar7.api.r4j.impl.R4J;
 import no.stelar7.api.r4j.pojo.lol.staticdata.item.Item;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,64 +16,130 @@ public class ChampionStatsService {
     @Autowired
     private RiotApiService riotApiService;
 
-    public List<Integer> getMostCommonItemBuild(ChampionStats championStats) {
-        //using injected service
+    public Map<Integer, Item> getItemsData() {
         R4J api = riotApiService.getApi();
-        Map<Integer, Item> itemData = api.getDDragonAPI().getItems();
+        return api.getDDragonAPI().getItems();
+    }
 
-        Map<List<Integer>, Integer> itemBuildFrequency = championStats.getItemBuildFrequency();
-
-        //map to count each itemId's seen
+    public HashMap<Integer, Integer> getItemFrequencyMap(Map<List<Integer>, Integer> itemBuildFrequency) {
         HashMap<Integer, Integer> itemFreqMap = new HashMap<>();
         for (Map.Entry<List<Integer>, Integer> entry : itemBuildFrequency.entrySet()) {
             for (int itemId : entry.getKey()) {
-                itemFreqMap.put(itemId, itemFreqMap.getOrDefault(itemId, 0) + 1);
+                itemFreqMap.put(itemId, itemFreqMap.getOrDefault(itemId, 0) + entry.getValue());
             }
         }
+        return itemFreqMap;
+    }
 
-        List<Map.Entry<Integer, Integer>> entryList = new ArrayList<>(itemFreqMap.entrySet());
-        entryList.sort(Map.Entry.comparingByValue(Collections.reverseOrder()));
+    public Pair<Integer, List<String>> getMostFrequentItemAndTags(List<Map.Entry<Integer, Integer>> entryList, Map<Integer, Item> itemData) {
+        Map.Entry<Integer, Integer> mostFrequentEntry = entryList.get(0);
+        int mostFrequentItemId = mostFrequentEntry.getKey();
+        Item mostFrequentItem = itemData.get(mostFrequentItemId);
+        return new Pair<>(mostFrequentItemId, mostFrequentItem.getTags());
+    }
 
-        List<Integer> top6Keys = new ArrayList<>();
+    public boolean getMythicItem(List<Map.Entry<Integer, Integer>> entryList, List<Integer> top6Keys, Map<Integer, Item> itemData) {
         boolean mythicAdded = false;
+        Iterator<Map.Entry<Integer, Integer>> iterator = entryList.iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<Integer, Integer> entry = iterator.next();
+            int itemId = entry.getKey();
+            Item item = itemData.get(itemId);
+            if (item != null && item.getDescription().contains("Mythic Passive:")) {
+                top6Keys.add(itemId);
+                mythicAdded = true;
+                iterator.remove();
+                break;
+            }
+        }
+        return mythicAdded;
+    }
 
+    public void getItemsByTags(List<Map.Entry<Integer, Integer>> entryList, List<String> dominantTags, List<Integer> top6Keys, Map<Integer, Item> itemData, boolean mythicAdded, boolean bootsAdded) {
         for (Map.Entry<Integer, Integer> entry : entryList) {
             int itemId = entry.getKey();
             Item item = itemData.get(itemId);
 
-            if (item == null) continue;
+            if (item != null) {
+                boolean tagMatch = false;
 
-            // Check if the item has the "Mythic" tag
-            boolean isMythic = item.getDescription().contains("Mythic Passive:");
-
-            if (isMythic) {
-                if (!mythicAdded) {
-                    top6Keys.add(itemId);
-                    mythicAdded = true;
+                for (String tag : item.getTags()) {
+                    if (dominantTags.contains(tag)) {
+                        tagMatch = true;
+                        break;
+                    }
                 }
-            } else {
-                top6Keys.add(itemId);
+
+                if (tagMatch) {
+                    if (mythicAdded && item.getDescription().contains("Mythic Passive:")) continue;
+                    if (bootsAdded && item.getTags().contains("Boots")) continue;
+                    top6Keys.add(itemId);
+                }
             }
 
             if (top6Keys.size() >= 6) {
                 break;
             }
         }
+    }
 
-        // Ensure at least one Mythic item is in the list if not added yet
-        if (!mythicAdded) {
-            for (Map.Entry<Integer, Integer> entry : entryList) {
-                int itemId = entry.getKey();
-                Item item = itemData.get(itemId);
-                if (item == null) continue;  // Item not found in the data
-
-                boolean isMythic = item.getDescription().contains("Mythic Passive:");
-
-                if (isMythic) {
-                    top6Keys.set(5, itemId);  // Replace the last item with a Mythic item
-                    break;
-                }
+    public void fillRemainingItems(List<Map.Entry<Integer, Integer>> entryList, List<Integer> top6Keys, Map<Integer, Item> itemData, boolean mythicAdded, boolean bootsAdded) {
+        for (Map.Entry<Integer, Integer> entry : entryList) {
+            int itemId = entry.getKey();
+            Item item = itemData.get(itemId);
+            if (item != null && (item.getTags().contains("Damage") || item.getTags().contains("SpellDamage") || item.getTags().contains("Defense"))) {
+                if (mythicAdded && item.getDescription().contains("Mythic Passive:")) continue;
+                if (bootsAdded && item.getTags().contains("Boots")) continue;
+                top6Keys.add(itemId);
             }
+            if (top6Keys.size() >= 6) {
+                break;
+            }
+        }
+    }
+
+    public boolean getBoots(List<Map.Entry<Integer, Integer>> entryList, List<Integer> top6Keys, Map<Integer, Item> itemData) {
+        boolean bootsAdded = false;
+        Iterator<Map.Entry<Integer, Integer>> iterator = entryList.iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<Integer, Integer> entry = iterator.next();
+            int itemId = entry.getKey();
+            Item item = itemData.get(itemId);
+            if (item != null && item.getTags().contains("Boots")) {
+                top6Keys.add(itemId);
+                bootsAdded = true;
+                iterator.remove();
+                break;
+            }
+        }
+        return bootsAdded;
+    }
+
+    public List<Integer> getMostCommonItemBuild(ChampionStats championStats) {
+        Map<Integer, Item> itemData = getItemsData();
+        Map<List<Integer>, Integer> itemBuildFrequency = championStats.getItemBuildFrequency();
+        HashMap<Integer, Integer> itemFreqMap = getItemFrequencyMap(itemBuildFrequency);
+
+        // Sort entryList by frequency in descending order
+        List<Map.Entry<Integer, Integer>> entryList = new ArrayList<>(itemFreqMap.entrySet());
+        entryList.sort(Map.Entry.<Integer, Integer>comparingByValue().reversed());
+
+        // Identify the most frequent item and its dominant tags
+        Pair<Integer, List<String>> mostFrequentItemAndTags = getMostFrequentItemAndTags(entryList, itemData);
+        List<String> dominantTags = mostFrequentItemAndTags.getValue();
+
+        List<Integer> top6Keys = new ArrayList<>();
+
+        boolean mythicAdded = getMythicItem(entryList, top6Keys, itemData);
+        boolean bootsAdded = getBoots(entryList, top6Keys, itemData);
+
+        // First loop to add items based on dominant tags
+        getItemsByTags(entryList, dominantTags, top6Keys, itemData, mythicAdded, bootsAdded);
+
+
+        // Second loop to fill up top6Keys if it has fewer than 6 items
+        if (top6Keys.size() < 6) {
+            fillRemainingItems(entryList, top6Keys, itemData, mythicAdded, bootsAdded);
         }
 
         return top6Keys;
@@ -92,6 +159,8 @@ public class ChampionStatsService {
             return "Dot";
         } else if ("cleanse".equalsIgnoreCase(result)) {
             return "Boost";
+        } else if ("ghost".equalsIgnoreCase(result)) {
+            return "Haste";
         } else {
             return result;
         }

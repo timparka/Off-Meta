@@ -18,6 +18,7 @@ import no.stelar7.api.r4j.pojo.lol.match.v5.LOLMatch;
 import no.stelar7.api.r4j.pojo.lol.match.v5.MatchParticipant;
 import no.stelar7.api.r4j.pojo.lol.staticdata.champion.StaticChampion;
 import no.stelar7.api.r4j.pojo.lol.staticdata.item.Item;
+import no.stelar7.api.r4j.pojo.lol.staticdata.shared.Gold;
 import no.stelar7.api.r4j.pojo.lol.staticdata.summonerspell.StaticSummonerSpell;
 import no.stelar7.api.r4j.pojo.lol.summoner.Summoner;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -111,7 +112,7 @@ public class UserService {
             for (String summonerId : summonerIds) {
                 Summoner summoner = new SummonerBuilder().withPlatform(region).withSummonerId(summonerId).get();
                 MatchV5API matchV5API = MatchV5API.getInstance();
-                List<String> matches = matchV5API.getMatchList(regionShard, summoner.getPUUID(), GameQueueType.TEAM_BUILDER_RANKED_SOLO, null, 0, 10, null, null);
+                List<String> matches = matchV5API.getMatchList(regionShard, summoner.getPUUID(), GameQueueType.TEAM_BUILDER_RANKED_SOLO, null, 0, 1, null, null);
 
                 if (matches == null || matches.isEmpty()) {
                     logger.warning("No matches found for PUUID: " + summoner.getPUUID());
@@ -135,16 +136,32 @@ public class UserService {
             Item item = itemData.get(itemId);
             if (item != null) {
                 List<String> tags = item.getTags();
-                System.out.println(tags);
+                Gold gold = item.getGold();
+                String description = item.getDescription();
 
-                if (tags.contains("Legendary") || tags.contains("Mythic") || (tags.contains("Boots"))) {
+                // Check if it's a Legendary item based on gold cost
+                if (gold.getTotal() >= 1600) {
                     filteredItemIds.add(itemId);
+                    continue;
+                }
+
+                // Check if it's a Mythic item based on description
+                if (description != null && description.contains("rarityMythic")) {
+                    filteredItemIds.add(itemId);
+                    continue;
+                }
+
+                // Check if it's Boots
+                if (tags.contains("Boots")) {
+                    filteredItemIds.add(itemId);
+                    continue;
                 }
             }
         }
 
         return filteredItemIds;
     }
+
 
     private void saveParticipants(Set<String> uniqueMatchIds, Map<Integer, StaticChampion> champData, Map<Integer,
             StaticSummonerSpell> spellData, Map<Integer, Item> itemData) {
